@@ -74,6 +74,7 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
 
 
 if __name__ == "__main__":
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", type=str, default="opt", choices=["opt", "mamba"])
     parser.add_argument("--seq_len", type=int, default=128)
