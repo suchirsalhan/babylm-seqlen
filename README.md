@@ -16,5 +16,5 @@ python main.py --model_type mamba --seq_len 1024 --push_to_hub
 
 DeepSpeed Stage3 with Multiple GPU Environment for larger sequences 
 ```
-accelerate launch --multi_gpu main.py --model_type opt --seq_len 4096 --use_deepspeed
+accelerate sbatch launch_slurm.wilkes3  --multi_gpu main.py --model_type opt --seq_len 4096 --use_deepspeed
 ```
