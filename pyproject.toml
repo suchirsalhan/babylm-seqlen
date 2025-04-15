@@ -1,0 +1,15 @@
+
+[project]
+name = "babylm-training"
+version = "0.1.0"
+description = "Training pipeline for BabyLM with multiple model support and checkpointing."
+authors = [{name = "Your Name", email = "your@email.com"}]
+dependencies = [
+    "transformers>=4.37.0",
+    "datasets",
+    "torch",
+    "huggingface_hub",
+    "deepspeed",
+    "accelerate",
+]
+requires-python = ">=3.8"
