@@ -2,8 +2,8 @@
 [project]
 name = "babylm-training"
 version = "0.1.0"
-description = "Training pipeline for BabyLM with multiple model support and checkpointing."
-authors = [{name = "Your Name", email = "your@email.com"}]
+description = "Training pipeline for BabyLM 2025 “How Long Can You Go?” with multiple model support and checkpointing."
+authors = [{name = "Suchir Salhan", email = "sas245@cam.ac.uk"}]
 dependencies = [
     "transformers>=4.37.0",
     "datasets",
