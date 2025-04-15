@@ -13,7 +13,7 @@ Train and push models to HuggingFace Hub
 python train.py --model_type opt --seq_len 1024 --push_to_hub 
 python train.py --model_type mamba --seq_len 1024 --push_to_hub
 ```
-You can add  `--dry_run`
+You can add  `--dry_run`. The default case `python train.py --dry_run` is 128 sequence length with OPT.
 
 Bubbles (do we need to include main.py?)
 
