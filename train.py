@@ -70,3 +70,23 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         save_to_hf(model_type, output_dir, checkpointing_config)
 
     print(f"✅ Training {model_type.upper()} for seq_len {seq_len} done in {end_time - start_time:.2f}s")
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_type", type=str, default="opt", choices=["opt", "mamba"])
+    parser.add_argument("--seq_len", type=int, default=128)
+    parser.add_argument("--use_deepspeed", action="store_true")
+    parser.add_argument("--push_to_hub", action="store_true")
+    parser.add_argument("--dry_run", action="store_true")
+
+    args = parser.parse_args()
+
+    train_model(
+        model_type=args.model_type,
+        seq_len=args.seq_len,
+        use_deepspeed=args.use_deepspeed,
+        push_to_hub=args.push_to_hub,
+        dry_run=args.dry_run
+    )
