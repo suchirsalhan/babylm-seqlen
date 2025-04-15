@@ -1,15 +1,13 @@
-
 [project]
-name = "babylm-training"
+name = "babylm-seqlen"
 version = "0.1.0"
-description = "Training pipeline for BabyLM 2025 “How Long Can You Go?” with multiple model support and checkpointing."
-authors = [{name = "Suchir Salhan", email = "sas245@cam.ac.uk"}]
+description = "Train language models on BabyLM with variable sequence lengths"
 dependencies = [
-    "transformers>=4.37.0",
+    "transformers>=4.40.0",
     "datasets",
-    "torch",
-    "huggingface_hub",
     "deepspeed",
+    "torch",
     "accelerate",
+    "wandb",
+    "mamba-ssm @ git+https://github.com/state-spaces/mamba.git",
 ]
-requires-python = ">=3.8"
