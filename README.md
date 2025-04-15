@@ -14,6 +14,13 @@ python main.py --model_type opt --seq_len 1024 --push_to_hub
 python main.py --model_type mamba --seq_len 1024 --push_to_hub
 ```
 
+Bubbles (do we need to include main.py?)
+
+```
+sh launch_torchrun.sh main.py --model_type opt --seq_len 1024 --push_to_hub
+sh launch_torchrun.sh main.py --model_type mamba --seq_len 1024 --push_to_hub
+```
+
 DeepSpeed Stage3 with Multiple GPU Environment for larger sequences 
 ```
 accelerate sbatch launch_slurm.wilkes3  --multi_gpu main.py --model_type opt --seq_len 4096 --use_deepspeed
