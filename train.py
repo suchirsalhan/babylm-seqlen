@@ -7,14 +7,18 @@ from hf_utils import save_to_hf
 from utils import get_deepspeed_config, create_output_dir
 from mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, CustomDataCollator, save_mamba_model
 
-def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=False):
+def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=False, dry_run=False):
     dataset = load_dataset(f"babylm-seqlen/train_100M_{seq_len}_single_shuffle")
     dataset = dataset.map(lambda x: {"labels": x["input_ids"]})
-    train_dataset = dataset["train"].select(range(1000))  # Small test subset
+    # ✅ Only use 100 samples for dry run
+    if dry_run:
+        train_dataset = dataset["train"].select(range(100))
+        output_dir = f"./dryruns/{model_type}-babylm-{seq_len}"
+    else:
+        train_dataset = dataset["train"]
+        output_dir = f"./checkpoints/{model_type}-babylm-{seq_len}"
 
-    output_dir = f"./checkpoints/{model_type}-babylm-{seq_len}"
     os.makedirs(output_dir, exist_ok=True)
-
     checkpointing_config = CheckpointingConfig(run_name=f"{model_type}_babylm_{seq_len}")
     tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
 
