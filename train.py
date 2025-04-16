@@ -3,7 +3,7 @@ from datasets import load_dataset
 from transformers import TrainingArguments, Trainer, AutoTokenizer
 from transformers import OPTForCausalLM
 from config._config import CheckpointingConfig
-from src.hf_utils.hf_utils import save_to_hf
+from src.hf_utils import save_to_hf
 from src.utils.utils import get_deepspeed_config, create_output_dir
 from src.utils.mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, CustomDataCollator, save_mamba_model
 
