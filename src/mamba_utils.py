@@ -3,14 +3,7 @@ import json
 import os
 from torch.nn import functional as F
 from transformers import Trainer, DataCollatorForLanguageModeling
-
 from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel, MambaConfig
-
-class CustomDataCollator(DataCollatorForLanguageModeling):
-    def __call__(self, features):
-        for f in features:
-            f.pop("attention_mask", None)
-        return super().__call__(features)
 
 class MambaTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
