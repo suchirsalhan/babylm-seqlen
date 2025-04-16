@@ -3,9 +3,10 @@ from datasets import load_dataset
 from transformers import TrainingArguments, Trainer, AutoTokenizer
 from transformers import OPTForCausalLM
 from config._config import CheckpointingConfig
-from hf_utils import save_to_hf
-from utils import get_deepspeed_config, create_output_dir
-from mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, CustomDataCollator, save_mamba_model
+from src.utils.config import CheckpointingConfig
+from src.hf_utils.hf_utils import save_to_hf
+from src.utils.utils import get_deepspeed_config, create_output_dir
+from src.utils.mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, CustomDataCollator, save_mamba_model
 
 def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=False, dry_run=False):
     dataset = load_dataset(f"babylm-seqlen/train_100M_{seq_len}_single_shuffle")
