@@ -7,7 +7,7 @@ tqdm
 pyyaml
 sentencepiece
 einops
-accelerate
+#accelerate
 peft
 bitsandbytes
 trl
