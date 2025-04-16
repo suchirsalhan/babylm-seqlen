@@ -1,6 +1,8 @@
 # babylm-seqlen
 How Long Can You Go? 
 
+Train a BabyLM with Different Sequence Lengths: `--seq_len` of 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384.
+
 ```
 git clone https://github.com/suchirsalhan/babylm-seqlen
 python3 -m venv venvs/demo; source venvs/demo/bin/activate
@@ -15,11 +17,10 @@ python train.py --model_type mamba --seq_len 1024 --push_to_hub
 ```
 You can add  `--dry_run`. The default case `python train.py --dry_run` is 128 sequence length with OPT.
 
-Bubbles (do we need to include main.py?)
-
+HPC 
 ```
-sh launch_torchrun.sh train.py --model_type opt --seq_len 1024 --push_to_hub
-sh launch_torchrun.sh train.py --model_type mamba --seq_len 1024 --push_to_hub
+sbatch launch_slurm.wilkes3 --model_type opt --seq_len 1024 --push_to_hub
+sbatch launch_slurm.wilkes3 --model_type mamba --seq_len 1024 --push_to_hub
 ```
 
 DeepSpeed Stage3 with Multiple GPU Environment for larger sequences 
