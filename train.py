@@ -5,7 +5,7 @@ from datasets import load_dataset
 from transformers import TrainingArguments, Trainer, AutoTokenizer
 from transformers import OPTConfig, OPTForCausalLM
 from config._config import CheckpointingConfig
-from src.hf_utils import save_to_hf
+from src.hf_utils import save_to_hf  # <- updated
 from src.utils.utils import get_deepspeed_config
 from src.collator import CustomDataCollator
 # from src.mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, save_mamba_model
@@ -35,7 +35,7 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
             num_hidden_layers=12,
             intermediate_size=3072,
             max_position_embeddings=2048,
-            torch_dtype="float16",  # Optional for fp16 training
+            torch_dtype="float16",
         )
         model = OPTForCausalLM(config)
         data_collator = CustomDataCollator(tokenizer=tokenizer, mlm=False)
@@ -96,7 +96,8 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         tokenizer.save_pretrained(output_dir)
 
     if push_to_hub:
-        save_to_hf(model_type, output_dir, checkpointing_config)
+        repo_id = f"babylm-seqlen/{model_type}-babylm-{seq_len}"
+        save_to_hf(model_type, output_dir, repo_id)
 
     print(f"✅ Training {model_type.upper()} for seq_len {seq_len} done in {end_time - start_time:.2f}s")
 
@@ -109,9 +110,9 @@ if __name__ == "__main__":
     parser.add_argument("--use_deepspeed", action="store_true")
     parser.add_argument("--no_push_to_hub", action="store_true", help="If set, do NOT push to the Hugging Face Hub.")
     parser.add_argument("--dry_run", action="store_true")
-    
+
     args = parser.parse_args()
-    
+
     train_model(
         model_type=args.model_type,
         seq_len=args.seq_len,
