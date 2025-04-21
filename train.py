@@ -106,15 +106,15 @@ if __name__ == "__main__":
     parser.add_argument("--model_type", type=str, default="opt", choices=["opt", "mamba"])
     parser.add_argument("--seq_len", type=int, default=128)
     parser.add_argument("--use_deepspeed", action="store_true")
-    parser.add_argument("--push_to_hub", action="store_true")
+    parser.add_argument("--push_to_hub", action="store_false", dest="no_push_to_hub")  # default True
     parser.add_argument("--dry_run", action="store_true")
-
+    
     args = parser.parse_args()
-
+    
     train_model(
         model_type=args.model_type,
         seq_len=args.seq_len,
         use_deepspeed=args.use_deepspeed,
-        push_to_hub=args.push_to_hub,
+        push_to_hub=not args.no_push_to_hub,
         dry_run=args.dry_run
     )
