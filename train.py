@@ -1,5 +1,6 @@
 import os
 import time
+import wandb
 from datasets import load_dataset
 from transformers import TrainingArguments, Trainer, AutoTokenizer
 from transformers import OPTConfig, OPTForCausalLM
@@ -9,7 +10,7 @@ from src.utils.utils import get_deepspeed_config
 from src.collator import CustomDataCollator
 # from src.mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, save_mamba_model
 
-def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=False, dry_run=False):
+def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=True, dry_run=False):
     dataset = load_dataset(f"babylm-seqlen/train_100M_{seq_len}_single_shuffle")
     dataset = dataset.map(lambda x: {"labels": x["input_ids"]})
 
@@ -47,7 +48,6 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         data_collator = CustomDataCollator(tokenizer=tokenizer, mlm=False)
         trainer_cls = MambaTrainer
 
-    # Initialize Weights & Biases run
     wandb.init(
         project="babylm-seqlen",
         name=checkpointing_config.run_name,
@@ -56,6 +56,7 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
             "seq_len": seq_len,
             "use_deepspeed": use_deepspeed,
             "dry_run": dry_run,
+            "push_to_hub": push_to_hub,
         },
         mode="disabled" if dry_run else "online",
     )
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_type", type=str, default="opt", choices=["opt", "mamba"])
     parser.add_argument("--seq_len", type=int, default=128)
     parser.add_argument("--use_deepspeed", action="store_true")
-    parser.add_argument("--push_to_hub", action="store_false", dest="no_push_to_hub")  # default True
+    parser.add_argument("--no_push_to_hub", action="store_true", help="If set, do NOT push to the Hugging Face Hub.")
     parser.add_argument("--dry_run", action="store_true")
     
     args = parser.parse_args()
