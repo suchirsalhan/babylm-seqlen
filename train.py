@@ -2,18 +2,18 @@ import os
 import time
 import wandb
 from datasets import load_dataset
-from transformers import TrainingArguments, Trainer, AutoTokenizer
-from transformers import OPTConfig, OPTForCausalLM
+from transformers import TrainingArguments, Trainer, OPTConfig, OPTForCausalLM
 from config._config import CheckpointingConfig
-from src.hf_utils import save_to_hf
+from src.hf_utils import save_to_hf  # <- updated
 from src.utils.utils import get_deepspeed_config
 from src.collator import CustomDataCollator
 
 def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=True, dry_run=False):
-    # Load pre-tokenized dataset
+    # Load the dataset
     dataset = load_dataset(f"babylm-seqlen/train_100M_{seq_len}_single_shuffle")
     dataset = dataset.map(lambda x: {"labels": x["input_ids"]})
 
+    # Dry run or full training
     if dry_run:
         train_dataset = dataset["train"].select(range(100))
         output_dir = f"./dryruns/{model_type}-babylm-{seq_len}"
@@ -24,7 +24,7 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
     os.makedirs(output_dir, exist_ok=True)
     checkpointing_config = CheckpointingConfig(run_name=f"{model_type}_babylm_{seq_len}")
 
-    # Since the dataset is pretokenized, no need for a tokenizer
+    # No tokenizer since dataset is pretokenized
     tokenizer = None
 
     if model_type == "opt":
@@ -38,15 +38,8 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
             torch_dtype="float16",
         )
         model = OPTForCausalLM(config)
-        data_collator = CustomDataCollator(mlm=False)  # No tokenizer required
+        data_collator = CustomDataCollator(mlm=False)  # No tokenizer needed here
         trainer_cls = Trainer
-
-    elif model_type == "mamba":
-        from src.mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, save_mamba_model
-        config = MambaConfig(d_model=256, n_layer=6, vocab_size=50257)
-        model = MambaLMHeadModel(config)
-        data_collator = CustomDataCollator(mlm=False)  # No tokenizer required
-        trainer_cls = MambaTrainer
 
     wandb.init(
         project="babylm-seqlen",
@@ -81,7 +74,7 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        tokenizer=tokenizer,
+        tokenizer=tokenizer,  # Pass None since tokenizer is not required
         data_collator=data_collator,
     )
 
@@ -89,17 +82,13 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
     trainer.train()
     end_time = time.time()
 
-    # Save the model and tokenizer after training
-    if model_type == "mamba":
-        save_mamba_model(model, model.config, output_dir, tokenizer)
-    else:
-        trainer.save_model(output_dir)
-        if tokenizer is not None:
-            tokenizer.save_pretrained(output_dir)  # Only save if tokenizer is used
+    trainer.save_model(output_dir)
+    if tokenizer:
+        tokenizer.save_pretrained(output_dir)
 
-    # Push to Hugging Face Hub after training and at each checkpoint
     if push_to_hub:
-        save_to_hf(model_type, output_dir, checkpointing_config, step=trainer.state.global_step)
+        repo_id = f"babylm-seqlen/{model_type}-babylm-{seq_len}"
+        save_to_hf(model_type, output_dir, checkpointing_config, trainer.state.global_step)
 
     print(f"✅ Training {model_type.upper()} for seq_len {seq_len} done in {end_time - start_time:.2f}s")
 
