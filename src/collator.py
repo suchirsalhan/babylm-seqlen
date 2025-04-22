@@ -1,14 +1,12 @@
-import torch
-from torch.nn import functional as F
+# src/collator.py
 from transformers import DataCollatorForLanguageModeling
 
 class CustomDataCollator(DataCollatorForLanguageModeling):
-    def __init__(self, mlm=False):
+    def __init__(self, tokenizer=None, mlm=False):
         super().__init__(mlm=mlm)
+        self.tokenizer = tokenizer  # Set tokenizer to None if not provided
 
     def __call__(self, features):
-        # We don't need to handle 'attention_mask' for pre-tokenized datasets
         for f in features:
-            f.pop("attention_mask", None)  # Remove 'attention_mask' if present
-        
+            f.pop("attention_mask", None)
         return super().__call__(features)
