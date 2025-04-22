@@ -8,11 +8,13 @@ from config._config import CheckpointingConfig
 from src.hf_utils import save_to_hf  # <- updated
 from src.utils.utils import get_deepspeed_config
 from src.collator import CustomDataCollator
-# from src.mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, save_mamba_model
 
 def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=True, dry_run=False):
     dataset = load_dataset(f"babylm-seqlen/train_100M_{seq_len}_single_shuffle")
     dataset = dataset.map(lambda x: {"labels": x["input_ids"]})
+
+    # Load checkpointing configuration
+    checkpointing_config = CheckpointingConfig(run_name=f"{model_type}_babylm_{seq_len}")
 
     if dry_run:
         train_dataset = dataset["train"].select(range(100))
@@ -22,7 +24,6 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         output_dir = f"./checkpoints/{model_type}-babylm-{seq_len}"
 
     os.makedirs(output_dir, exist_ok=True)
-    checkpointing_config = CheckpointingConfig(run_name=f"{model_type}_babylm_{seq_len}")
 
     tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", use_fast=True)
     tokenizer.model_max_length = seq_len
@@ -66,9 +67,9 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         per_device_train_batch_size=64,
         num_train_epochs=10,
         evaluation_strategy="no",
-        save_strategy="steps",
-        save_steps=checkpointing_config.save_every_n_steps,
-        save_total_limit=2,
+        save_strategy="steps",  # Save checkpoints every few steps
+        save_steps=checkpointing_config.save_every_n_steps,  # From config
+        save_total_limit=checkpointing_config.save_total_limit,  # From config
         fp16=True,
         report_to="wandb",
         run_name=checkpointing_config.run_name,
@@ -86,18 +87,23 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
     )
 
     start_time = time.time()
-    trainer.train()
+    
+    # Start training
+    for step in range(1, trainer.args.max_steps + 1):
+        trainer.train(resume_from_checkpoint=True)
+
+        # Save checkpoints every few steps
+        if step % checkpointing_config.save_every_n_steps == 0:
+            # Save checkpoint locally
+            checkpoint_path = os.path.join(output_dir, f"checkpoint-{step}")
+            trainer.save_model(checkpoint_path)
+            tokenizer.save_pretrained(checkpoint_path)
+            
+            # Push checkpoint to Hugging Face
+            if push_to_hub:
+                save_to_hf(model_type, checkpoint_path, checkpointing_config, step)
+
     end_time = time.time()
-
-    if model_type == "mamba":
-        save_mamba_model(model, model.config, output_dir, tokenizer)
-    else:
-        trainer.save_model(output_dir)
-        tokenizer.save_pretrained(output_dir)
-
-    if push_to_hub:
-        repo_id = f"babylm-seqlen/{model_type}-babylm-{seq_len}"
-        save_to_hf(model_type, output_dir, repo_id)
 
     print(f"✅ Training {model_type.upper()} for seq_len {seq_len} done in {end_time - start_time:.2f}s")
 
@@ -118,5 +124,5 @@ if __name__ == "__main__":
         seq_len=args.seq_len,
         use_deepspeed=args.use_deepspeed,
         push_to_hub=not args.no_push_to_hub,
-        dry_run=args.dry_run
+        dry_run=args.dry_run,
     )
