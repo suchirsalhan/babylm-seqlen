@@ -24,8 +24,8 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
     os.makedirs(output_dir, exist_ok=True)
     checkpointing_config = CheckpointingConfig(run_name=f"{model_type}_babylm_{seq_len}")
 
-    # Load tokenizer from Hugging Face Hub
-    tokenizer = AutoTokenizer.from_pretrained("babylm-seqlen/tokenizer")
+    # Force download tokenizer from Hugging Face Hub
+    tokenizer = AutoTokenizer.from_pretrained("babylm-seqlen/tokenizer", force_download=True)
 
     if model_type == "opt":
         config = OPTConfig(
