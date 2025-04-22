@@ -2,7 +2,7 @@ import os
 import time
 import wandb
 from datasets import load_dataset
-from transformers import TrainingArguments, Trainer, AutoTokenizer
+from transformers import TrainingArguments, Trainer
 from transformers import OPTConfig, OPTForCausalLM
 from config._config import CheckpointingConfig
 from src.hf_utils import save_to_hf  # <- updated
@@ -26,9 +26,8 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Load tokenizer from Hugging Face Hub (No need to load a tokenizer from the dataset as it's pre-tokenized)
-    tokenizer = AutoTokenizer.from_pretrained("babylm-seqlen/tokenizer")
-    tokenizer.model_max_length = seq_len  # Set sequence length
+    # No tokenizer needed, because the dataset is pre-tokenized
+    tokenizer = None
 
     if model_type == "opt":
         config = OPTConfig(
@@ -41,14 +40,14 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
             torch_dtype="float16",
         )
         model = OPTForCausalLM(config)
-        data_collator = CustomDataCollator(tokenizer=tokenizer, mlm=False)
+        data_collator = CustomDataCollator(mlm=False)  # No tokenizer here
         trainer_cls = Trainer
 
     elif model_type == "mamba":
         from src.mamba_utils import MambaLMHeadModel, MambaConfig, MambaTrainer, save_mamba_model
         config = MambaConfig(d_model=256, n_layer=6, vocab_size=50257)
         model = MambaLMHeadModel(config)
-        data_collator = CustomDataCollator(tokenizer=tokenizer, mlm=False)
+        data_collator = CustomDataCollator(mlm=False)  # No tokenizer here
         trainer_cls = MambaTrainer
 
     wandb.init(
@@ -84,25 +83,22 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
+        data_collator=data_collator,  # Custom data collator without tokenizer
     )
 
     start_time = time.time()
-
+    
     # Start training
     for step in range(1, trainer.args.max_steps + 1):
         trainer.train(resume_from_checkpoint=True)
 
-        # Save checkpoints and tokenizer every few steps
+        # Save checkpoints every few steps
         if step % checkpointing_config.save_every_n_steps == 0:
+            # Save checkpoint locally
             checkpoint_path = os.path.join(output_dir, f"checkpoint-{step}")
             trainer.save_model(checkpoint_path)
             
-            # Save tokenizer at every checkpoint
-            tokenizer.save_pretrained(checkpoint_path)
-            
-            # Push checkpoint to Hugging Face
+            # Optionally push checkpoint to Hugging Face
             if push_to_hub:
                 save_to_hf(model_type, checkpoint_path, checkpointing_config, step)
 
