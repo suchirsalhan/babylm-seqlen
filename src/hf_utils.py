@@ -1,6 +1,5 @@
 # src/hf_utils.py
-from huggingface_hub import HfApi, create_repo, upload_folder, commit_repo
-
+from huggingface_hub import HfApi, create_repo, upload_folder
 
 def save_to_hf(model_type, local_path, checkpointing_config, step):
     repo_id = checkpointing_config.hf_checkpoint.repo_id or f"babylm-seqlen/{model_type}-trained"
@@ -20,8 +19,4 @@ def save_to_hf(model_type, local_path, checkpointing_config, step):
         branch=branch_name  # Specify the branch
     )
     
-    # Optionally commit to the branch (push to the hub)
-    commit_repo(repo_id=repo_id, branch=branch_name)
-    
     print(f"✅ Uploaded checkpoint to Hugging Face Hub: https://huggingface.co/{repo_id}/tree/{branch_name}")
-
