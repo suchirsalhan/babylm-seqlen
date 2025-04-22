@@ -10,6 +10,7 @@ from src.utils.utils import get_deepspeed_config
 from src.collator import CustomDataCollator
 
 def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=True, dry_run=False):
+    # Load pre-tokenized dataset
     dataset = load_dataset(f"babylm-seqlen/train_100M_{seq_len}_single_shuffle")
     dataset = dataset.map(lambda x: {"labels": x["input_ids"]})
 
@@ -25,8 +26,9 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
 
     os.makedirs(output_dir, exist_ok=True)
 
-    tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", use_fast=True)
-    tokenizer.model_max_length = seq_len
+    # Load tokenizer from Hugging Face Hub (No need to load a tokenizer from the dataset as it's pre-tokenized)
+    tokenizer = AutoTokenizer.from_pretrained("babylm-seqlen/tokenizer")
+    tokenizer.model_max_length = seq_len  # Set sequence length
 
     if model_type == "opt":
         config = OPTConfig(
@@ -87,16 +89,17 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
     )
 
     start_time = time.time()
-    
+
     # Start training
     for step in range(1, trainer.args.max_steps + 1):
         trainer.train(resume_from_checkpoint=True)
 
-        # Save checkpoints every few steps
+        # Save checkpoints and tokenizer every few steps
         if step % checkpointing_config.save_every_n_steps == 0:
-            # Save checkpoint locally
             checkpoint_path = os.path.join(output_dir, f"checkpoint-{step}")
             trainer.save_model(checkpoint_path)
+            
+            # Save tokenizer at every checkpoint
             tokenizer.save_pretrained(checkpoint_path)
             
             # Push checkpoint to Hugging Face
