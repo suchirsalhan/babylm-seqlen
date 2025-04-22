@@ -2,7 +2,7 @@ import os
 import time
 import wandb
 from datasets import load_dataset
-from transformers import TrainingArguments, Trainer, OPTConfig, OPTForCausalLM
+from transformers import TrainingArguments, Trainer, OPTConfig, OPTForCausalLM, AutoTokenizer
 from config._config import CheckpointingConfig
 from src.hf_utils import save_to_hf  # <- updated
 from src.utils.utils import get_deepspeed_config
@@ -24,8 +24,8 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
     os.makedirs(output_dir, exist_ok=True)
     checkpointing_config = CheckpointingConfig(run_name=f"{model_type}_babylm_{seq_len}")
 
-    # No tokenizer since dataset is pretokenized
-    tokenizer = None
+    # Load tokenizer from Hugging Face Hub
+    tokenizer = AutoTokenizer.from_pretrained("babylm-seqlen/tokenizer")
 
     if model_type == "opt":
         config = OPTConfig(
@@ -74,7 +74,7 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        tokenizer=tokenizer,  # Pass None since tokenizer is not required
+        tokenizer=tokenizer,  # Pass the tokenizer
         data_collator=data_collator,
     )
 
@@ -83,8 +83,7 @@ def train_model(model_type="opt", seq_len=128, use_deepspeed=False, push_to_hub=
     end_time = time.time()
 
     trainer.save_model(output_dir)
-    if tokenizer:
-        tokenizer.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)  # Save tokenizer to the output directory
 
     if push_to_hub:
         repo_id = f"babylm-seqlen/{model_type}-babylm-{seq_len}"
